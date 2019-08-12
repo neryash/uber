@@ -2,6 +2,7 @@ package com.nerya.uber;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -79,8 +80,9 @@ signup.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void done(ParseUser user, ParseException e) {
                     if(user != null && e == null){
-                        Toast.makeText(MainActivity.this, "logged in succesfully", Toast.LENGTH_SHORT).show();
                         transitionP();
+                        Toast.makeText(MainActivity.this, "logged in succesfully", Toast.LENGTH_SHORT).show();
+
                     }
                 }
             });
@@ -146,6 +148,8 @@ onetime.setOnClickListener(new View.OnClickListener() {
             if(ParseUser.getCurrentUser().get("as").equals("Passenger")){
                 Intent intent = new Intent(MainActivity.this, PassengerActivity.class);
                 startActivity(intent);
+            }else {
+                Toast.makeText(MainActivity.this, "hello", Toast.LENGTH_SHORT).show();
             }
         }
     }

@@ -13,7 +13,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
+import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,24 +25,49 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.parse.FindCallback;
+import com.parse.Parse;
+import com.parse.ParseException;
+import com.parse.ParseGeoPoint;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseUser;
+import com.parse.SaveCallback;
+
+import java.util.List;
 
 import okhttp3.internal.Version;
 
-public class PassengerActivity extends FragmentActivity implements OnMapReadyCallback {
+public class PassengerActivity extends FragmentActivity implements OnMapReadyCallback, View.OnClickListener {
 
     private GoogleMap mMap;
     private LocationManager locationManager;
     private LocationListener locationListener;
 
+    private Button btnRequest;
+    private boolean isCanceled = true;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_passenger);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used
 
+        btnRequest = findViewById(R.id.btnRequest);
+        btnRequest.setOnClickListener(this);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        ParseQuery<ParseObject> carRequest = ParseQuery.getQuery("request");
+        carRequest.whereEqualTo("username", ParseUser.getCurrentUser());
+        carRequest.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> objects, ParseException e) {
+                if(objects.size() > 0 && e == null){
+                    isCanceled = false;
+                }
+            }
+        });
     }
 
 
@@ -84,6 +113,8 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
 
             }else{
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                Location passLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                updateCamera(passLoc);
             }
         }
     }
@@ -103,8 +134,36 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
     private void updateCamera(Location pLocation){
         LatLng passengerLoc = new LatLng(pLocation.getLatitude(), pLocation.getLongitude());
         mMap.clear();
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(passengerLoc));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(passengerLoc, 10f));
 
         mMap.addMarker(new MarkerOptions().position(passengerLoc).title("you are here"));
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0,locationListener);
+            Location passLoc = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+            if(passLoc != null){
+                ParseObject request = new ParseObject("request");
+                request.put("username", ParseUser.getCurrentUser().getUsername());
+                ParseGeoPoint userLoc = new ParseGeoPoint(passLoc.getLatitude(), passLoc.getLongitude());
+                request.put("passloc", userLoc);
+
+                request.saveInBackground(new SaveCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if(e == null) {
+                            Toast.makeText(PassengerActivity.this, "car requested", Toast.LENGTH_SHORT).show();
+                            btnRequest.setText("cancel order");
+                        }else {
+                            Toast.makeText(PassengerActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }else {
+                Toast.makeText(this, "unknown error, something went wrong", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
