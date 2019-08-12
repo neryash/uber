@@ -44,7 +44,8 @@ private RadioButton passenger, driver;
         driver = findViewById(R.id.driver);
 
         if(ParseUser.getCurrentUser() != null) {
-            ParseUser.logOut();
+            transitionD();
+            transitionP();
         }
 state = State.SIGNUP;
 signup.setOnClickListener(new View.OnClickListener() {
@@ -72,6 +73,7 @@ signup.setOnClickListener(new View.OnClickListener() {
                     if(e == null){
                         Toast.makeText(MainActivity.this, "Signed Up successfully!", Toast.LENGTH_SHORT).show();
                         transitionP();
+                        transitionD();
                     }else {
                         Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -83,6 +85,7 @@ signup.setOnClickListener(new View.OnClickListener() {
                 public void done(ParseUser user, ParseException e) {
                     if(user != null && e == null){
                         transitionP();
+                        transitionD();
                         Toast.makeText(MainActivity.this, "logged in succesfully", Toast.LENGTH_SHORT).show();
 
                     }
@@ -106,6 +109,7 @@ onetime.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void done(ParseException e) {
                                     transitionP();
+                                    transitionD();
                                 }
                             });
                         }else{
@@ -150,8 +154,14 @@ onetime.setOnClickListener(new View.OnClickListener() {
             if(ParseUser.getCurrentUser().get("as").equals("Passenger")){
                 Intent intent = new Intent(MainActivity.this, PassengerActivity.class);
                 startActivity(intent);
-            }else {
-                Toast.makeText(MainActivity.this, "hello", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    private void transitionD(){
+        if(ParseUser.getCurrentUser() != null){
+            if(ParseUser.getCurrentUser().get("as").equals("Driver")){
+                Intent intent = new Intent(MainActivity.this, driverRequestList.class);
+                startActivity(intent);
             }
         }
     }
