@@ -2,6 +2,7 @@ package com.nerya.uber;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,6 +17,7 @@ import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
 import com.parse.ParseUser;
+import com.parse.SaveCallback;
 import com.parse.SignUpCallback;
 
 public class MainActivity extends AppCompatActivity {
@@ -56,15 +58,19 @@ signup.setOnClickListener(new View.OnClickListener() {
             appUser.setUsername(username.getText().toString());
             appUser.setPassword(password.getText().toString());
             if(driver.isChecked() == true){
-                appUser.put("as", "driver");
+                appUser.put("as", "Driver");
+
             }else {
-                appUser.put("as", "passenger");
+                appUser.put("as", "Passenger");
+                Intent intent = new Intent(MainActivity.this, PassengerActivity.class);
+                startActivity(intent);
             }
             appUser.signUpInBackground(new SignUpCallback() {
                 @Override
                 public void done(ParseException e) {
                     if(e == null){
                         Toast.makeText(MainActivity.this, "Signed Up successfully!", Toast.LENGTH_SHORT).show();
+                        transitionP();
                     }
                 }
             });
@@ -74,6 +80,7 @@ signup.setOnClickListener(new View.OnClickListener() {
                 public void done(ParseUser user, ParseException e) {
                     if(user != null && e == null){
                         Toast.makeText(MainActivity.this, "logged in succesfully", Toast.LENGTH_SHORT).show();
+                        transitionP();
                     }
                 }
             });
@@ -91,7 +98,12 @@ onetime.setOnClickListener(new View.OnClickListener() {
                         if(user != null && e == null){
                             Toast.makeText(MainActivity.this, "you logged in anonymously", Toast.LENGTH_SHORT).show();
                             user.put("as", pOd.getText().toString());
-                            user.saveInBackground();
+                            user.saveInBackground(new SaveCallback() {
+                                @Override
+                                public void done(ParseException e) {
+                                    transitionP();
+                                }
+                            });
                         }else{
                             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -127,6 +139,15 @@ onetime.setOnClickListener(new View.OnClickListener() {
 
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void transitionP(){
+        if(ParseUser.getCurrentUser() != null){
+            if(ParseUser.getCurrentUser().get("as").equals("Passenger")){
+                Intent intent = new Intent(MainActivity.this, PassengerActivity.class);
+                startActivity(intent);
+            }
+        }
     }
 
 }
