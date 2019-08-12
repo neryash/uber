@@ -25,6 +25,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.parse.DeleteCallback;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
@@ -65,6 +66,7 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
             public void done(List<ParseObject> objects, ParseException e) {
                 if(objects.size() > 0 && e == null){
                     isCanceled = false;
+                    btnRequest.setText("cancel ride");
                 }
             }
         });
@@ -141,29 +143,54 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
 
     @Override
     public void onClick(View v) {
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0,locationListener);
-            Location passLoc = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-            if(passLoc != null){
-                ParseObject request = new ParseObject("request");
-                request.put("username", ParseUser.getCurrentUser().getUsername());
-                ParseGeoPoint userLoc = new ParseGeoPoint(passLoc.getLatitude(), passLoc.getLongitude());
-                request.put("passloc", userLoc);
+        if (isCanceled) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                Location passLoc = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+                if (passLoc != null) {
+                    ParseObject request = new ParseObject("request");
+                    request.put("username", ParseUser.getCurrentUser().getUsername());
+                    ParseGeoPoint userLoc = new ParseGeoPoint(passLoc.getLatitude(), passLoc.getLongitude());
+                    request.put("passloc", userLoc);
 
-                request.saveInBackground(new SaveCallback() {
-                    @Override
-                    public void done(ParseException e) {
-                        if(e == null) {
-                            Toast.makeText(PassengerActivity.this, "car requested", Toast.LENGTH_SHORT).show();
-                            btnRequest.setText("cancel order");
-                        }else {
-                            Toast.makeText(PassengerActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    request.saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                Toast.makeText(PassengerActivity.this, "car requested", Toast.LENGTH_SHORT).show();
+                                btnRequest.setText("cancel order");
+                            } else {
+                                Toast.makeText(PassengerActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                } else {
+                    Toast.makeText(this, "unknown error, something went wrong", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }else {
+            ParseQuery<ParseObject> carRequestQ = ParseQuery.getQuery("request");
+            carRequestQ.whereEqualTo("username", ParseUser.getCurrentUser().getUsername());
+            carRequestQ.findInBackground(new FindCallback<ParseObject>() {
+                @Override
+                public void done(List<ParseObject> objects, ParseException e) {
+                    if(objects.size() > 0 && e == null){
+                        isCanceled = true;
+                        btnRequest.setText("request Car");
+
+                        for(ParseObject uberRequest : objects){
+                            uberRequest.deleteInBackground(new DeleteCallback() {
+                                @Override
+                                public void done(ParseException e) {
+                                    if(e == null){
+                                        Toast.makeText(PassengerActivity.this, "request deleted", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
                         }
                     }
-                });
-            }else {
-                Toast.makeText(this, "unknown error, something went wrong", Toast.LENGTH_SHORT).show();
-            }
+                }
+            });
         }
     }
 }
