@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -27,6 +28,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.parse.DeleteCallback;
 import com.parse.FindCallback;
+import com.parse.LogOutCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
@@ -53,14 +55,16 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
         setContentView(R.layout.activity_passenger);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used
 
-        btnRequest = findViewById(R.id.btnRequest);
-        btnRequest.setOnClickListener(this);
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        btnRequest = findViewById(R.id.btnRequest);
+        btnRequest.setOnClickListener(this);
+
         ParseQuery<ParseObject> carRequest = ParseQuery.getQuery("request");
-        carRequest.whereEqualTo("username", ParseUser.getCurrentUser());
+        carRequest.whereEqualTo("username", ParseUser.getCurrentUser().getUsername());
         carRequest.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> objects, ParseException e) {
@@ -68,6 +72,19 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
                     isCanceled = false;
                     btnRequest.setText("cancel ride");
                 }
+            }
+        });
+
+        findViewById(R.id.LogOutP).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ParseUser.logOutInBackground(new LogOutCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        Toast.makeText(PassengerActivity.this, "logged out successfully", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
             }
         });
     }
@@ -159,6 +176,7 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
                             if (e == null) {
                                 Toast.makeText(PassengerActivity.this, "car requested", Toast.LENGTH_SHORT).show();
                                 btnRequest.setText("cancel order");
+                                isCanceled=false;
                             } else {
                                 Toast.makeText(PassengerActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             }

@@ -72,6 +72,8 @@ signup.setOnClickListener(new View.OnClickListener() {
                     if(e == null){
                         Toast.makeText(MainActivity.this, "Signed Up successfully!", Toast.LENGTH_SHORT).show();
                         transitionP();
+                    }else {
+                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }
             });
