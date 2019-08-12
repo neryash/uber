@@ -58,11 +58,7 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                LatLng passengerLoc = new LatLng(location.getLatitude(), location.getLongitude());
-                mMap.clear();
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(passengerLoc));
-
-                mMap.addMarker(new MarkerOptions().position(passengerLoc).title("you are here"));
+                updateCamera(location);
             }
 
             @Override
@@ -97,8 +93,18 @@ public class PassengerActivity extends FragmentActivity implements OnMapReadyCal
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if(requestCode == 1000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
+            if(ContextCompat.checkSelfPermission(PassengerActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                Location passLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                updateCamera(passLoc);
+            }
         }
+    }
+    private void updateCamera(Location pLocation){
+        LatLng passengerLoc = new LatLng(pLocation.getLatitude(), pLocation.getLongitude());
+        mMap.clear();
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(passengerLoc));
+
+        mMap.addMarker(new MarkerOptions().position(passengerLoc).title("you are here"));
     }
 }
