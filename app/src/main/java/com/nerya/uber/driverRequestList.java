@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -34,12 +35,14 @@ import com.parse.ParseUser;
 import java.util.ArrayList;
 import java.util.List;
 
-public class driverRequestList extends AppCompatActivity {
+public class driverRequestList extends AppCompatActivity implements AdapterView.OnItemClickListener {
 private Button refresh;
 private LocationManager locationManager;
 private LocationListener locationListener;
 private ListView listView;
 private ArrayList<String> driveRequests;
+private ArrayList<Double> passLat;
+private ArrayList<Double> passLon;
     private ArrayAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,7 @@ private ArrayList<String> driveRequests;
         adapter = new ArrayAdapter(driverRequestList.this, android.R.layout.simple_list_item_1, driveRequests);
         refresh = findViewById(R.id.updateList);
         listView.setAdapter(adapter);
+        listView.setOnItemClickListener(this);
         driveRequests.clear();
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,7 +82,7 @@ private ArrayList<String> driveRequests;
                     }
                 };
                 if(Build.VERSION.SDK_INT < 23) {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0,locationListener);
                     Location drLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                     updateRequests(drLoc);
                 }else {
@@ -95,19 +99,21 @@ private ArrayList<String> driveRequests;
 
         });
 
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+        if(Build.VERSION.SDK_INT < 23 || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             try {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0,locationListener);
             }catch (Exception e){
                 e.printStackTrace();
             }
         }
+        passLat = new ArrayList<>();
+        passLon = new ArrayList<>();
     }
 
     private void updateRequests(Location drLoc) {
         if(drLoc != null) {
 
-            driveRequests.clear();
+
             final ParseGeoPoint driverLoc = new ParseGeoPoint(drLoc.getLatitude(), drLoc.getLongitude());
             final ParseQuery<ParseObject> requestCar = ParseQuery.getQuery("request");
             requestCar.whereNear("passloc", driverLoc);
@@ -117,11 +123,23 @@ private ArrayList<String> driveRequests;
                 public void done(List<ParseObject> objects, ParseException e) {
                     if(e == null){
                     if (objects.size() > 0) {
-
+                        if(driveRequests.size() > 0) {
+                            driveRequests.clear();
+                        }
+                        if(passLon.size() > 0) {
+                            passLon.clear();
+                        }
+                        if(passLat.size() > 0) {
+                            passLat.clear();
+                        }
                         for (ParseObject nearestReq : objects) {
-                            Double kilometersDistPas = driverLoc.distanceInKilometersTo(nearestReq.getParseGeoPoint("passloc"));
+                            ParseGeoPoint pLoc = (ParseGeoPoint)  nearestReq.get("passloc");
+
+                            Double kilometersDistPas = driverLoc.distanceInKilometersTo(pLoc);
                             float RoundedDist = Math.round(kilometersDistPas * 10) / 10;
                             driveRequests.add("there are " + RoundedDist + " kilometers to " + nearestReq.get("username"));
+                            passLat.add(pLoc.getLatitude());
+                            passLon.add(pLoc.getLongitude());
                         }
 
                     }else {
@@ -142,8 +160,8 @@ private ArrayList<String> driveRequests;
         if(requestCode == 1000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
             if(ContextCompat.checkSelfPermission(driverRequestList.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-               // Location drLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                //updateRequests(drLoc);
+                Location drLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                updateRequests(drLoc);
             }
         }
     }
@@ -170,4 +188,8 @@ private ArrayList<String> driveRequests;
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Toast.makeText(this, "clicked", Toast.LENGTH_SHORT).show();
+    }
 }

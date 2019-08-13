@@ -18,7 +18,7 @@
         android:id="@+id/updateList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Update list" />
+        android:text="Get Requests" />
 
     <ListView
         android:id="@+id/requestList"
