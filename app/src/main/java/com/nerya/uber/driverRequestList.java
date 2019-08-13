@@ -6,6 +6,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -43,6 +44,7 @@ private ListView listView;
 private ArrayList<String> driveRequests;
 private ArrayList<Double> passLat;
 private ArrayList<Double> passLon;
+private ArrayList<String> carUsernames;
     private ArrayAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ private ArrayList<Double> passLon;
         refresh = findViewById(R.id.updateList);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
+        carUsernames = new ArrayList<>();
         driveRequests.clear();
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,6 +135,9 @@ private ArrayList<Double> passLon;
                         if(passLat.size() > 0) {
                             passLat.clear();
                         }
+                        if(carUsernames.size() > 0) {
+                            carUsernames.clear();
+                        }
                         for (ParseObject nearestReq : objects) {
                             ParseGeoPoint pLoc = (ParseGeoPoint)  nearestReq.get("passloc");
 
@@ -140,6 +146,7 @@ private ArrayList<Double> passLon;
                             driveRequests.add("there are " + RoundedDist + " kilometers to " + nearestReq.get("username"));
                             passLat.add(pLoc.getLatitude());
                             passLon.add(pLoc.getLongitude());
+                            carUsernames.add(nearestReq.get("username") + "");
                         }
 
                     }else {
@@ -190,6 +197,18 @@ private ArrayList<Double> passLon;
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Toast.makeText(this, "clicked", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "clicked", Toast.LENGTH_SHORT).show();
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Location cdLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if(cdLocation != null) {
+                Intent intent = new Intent(this, viewLocations.class);
+                intent.putExtra("driverLat", cdLocation.getLatitude());
+                intent.putExtra("driverLon", cdLocation.getLongitude());
+                intent.putExtra("passengerLat", passLat.get(position));
+                intent.putExtra("passengerLon", passLon.get(position));
+                intent.putExtra("Rusername", carUsernames.get(position));
+                startActivity(intent);
+            }
+        }
     }
 }
