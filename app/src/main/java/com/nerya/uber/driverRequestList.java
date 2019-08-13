@@ -94,6 +94,14 @@ private ArrayList<String> driveRequests;
             }
 
         });
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            try {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,0,locationListener);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
     private void updateRequests(Location drLoc) {
@@ -134,8 +142,8 @@ private ArrayList<String> driveRequests;
         if(requestCode == 1000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
             if(ContextCompat.checkSelfPermission(driverRequestList.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-                Location drLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                updateRequests(drLoc);
+               // Location drLoc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                //updateRequests(drLoc);
             }
         }
     }
